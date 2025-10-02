@@ -2,6 +2,7 @@ services:
   - type: web
     name: sts-crm-backend
     env: node
+    rootDir: backend
     plan: free
     buildCommand: npm install && npx prisma migrate deploy && npm run build
     startCommand: npm run start
@@ -17,7 +18,8 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        value: https://your-frontend.vercel.app,http://localhost:5173
+        value: https://crm-orical.vercel.app,http://localhost:5173
+
 databases:
   - name: sts-crm-db
     plan: free
