@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(cuid())
+  name      String
+  email     String  @unique
+  password  String
+  role      Role    @default(AGENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  activities Activity[]
+  tasks       Task[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+  TECH
+}
+
+model Client {
+  id        String @id @default(cuid())
+  name      String
+  industry  String?
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+  ownerId   String?
+  owner     User?  @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts   Contact[]
+  deals      Deal[]
+  projects   Project[]
+  payments   Payment[]
+  activities Activity[]
+}
+
+model Contact {
+  id        String @id @default(cuid())
+  clientId  String
+  name      String
+  email     String?
+  phone     String?
+  title     String?
+  notes     String?
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id         String  @id @default(cuid())
+  clientId   String
+  title      String
+  value      Float   @default(0)
+  stage      DealStage @default(LEAD)
+  ownerId    String?
+  owner      User?   @relation(fields: [ownerId], references: [id])
+  expectedClose DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  client     Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  WON
+  LOST
+}
+
+model Project {
+  id        String @id @default(cuid())
+  clientId  String
+  name      String
+  status    ProjectStatus @default(PLANNING)
+  startDate DateTime?
+  endDate   DateTime?
+  notes     String?
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model Task {
+  id         String @id @default(cuid())
+  projectId  String?
+  clientId   String?
+  title      String
+  status     TaskStatus @default(TODO)
+  assigneeId String?
+  dueDate    DateTime?
+  notes      String?
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  client     Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assignee   User?    @relation(fields: [assigneeId], references: [id])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+model Payment {
+  id        String @id @default(cuid())
+  clientId  String
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+  method    String? // e.g., UPI, NEFT, Razorpay
+  dueDate   DateTime?
+  paidAt    DateTime?
+  notes     String?
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Activity {
+  id        String @id @default(cuid())
+  type      String  // CALL, EMAIL, MEETING, NOTE
+  summary   String
+  userId    String?
+  clientId  String?
+  createdAt DateTime @default(now())
+  user      User?   @relation(fields: [userId], references: [id])
+  client    Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
